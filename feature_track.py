@@ -2,27 +2,51 @@ import numpy as np
 import cv2
 import matplotlib
 
+
+# def track_features(video_input):
+#     capture = cv2.VideoCapture(video_input)
+#
+
+def extract_roi(poly):
+    poly_numpy = np.array(poly).squeeze()
+
+    x_start = poly_numpy.min(axis=0)[0]
+    y_start = poly_numpy.min(axis=0)[1]
+    x_end = poly_numpy.max(axis=0)[0]
+    y_end = poly_numpy.max(axis=0)[1]
+
+    return x_start, y_start, x_end, y_end
+
 capture = cv2.VideoCapture("feature_tracking_test.mp4")
 
-#while True:
-succ, image = capture.read()
+lower = np.array([200, 200, 200])
+upper = np.array([255, 255, 255])
 
-#image = cv2.imread("test.jpg")
+previous_location = None
 
-#if succ:
-lower = np.array([86, 31, 4])
-upper = np.array([255, 100, 100])
-mask = cv2.inRange(image, lower, upper)
+while True:
+    succ, image = capture.read()
 
-cnts, _ = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
-                                cv2.CHAIN_APPROX_SIMPLE)
-c = max(cnts, key=cv2.contourArea)
+    if succ:
+        mask = cv2.inRange(image, lower, upper)
 
-peri = cv2.arcLength(c, True)
-approx = cv2.approxPolyDP(c, 0.05 * peri, True)
+        contours, _ = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        feature = max(contours, key=cv2.contourArea)
 
-cv2.drawContours(image, [approx], -1, (255, 0, 255), 4)
-cv2.imshow("Image", image)
-cv2.waitKey(0)
-#else:
-    # break
+        perimeter = cv2.arcLength(feature, True)
+        approximate_region = cv2.approxPolyDP(feature, 0.05 * perimeter, True)
+
+        xs, ys, xe, ye = extract_roi(approximate_region)
+
+        cv2.rectangle(image, (xs, ys), (xe, ye), 255, 2)
+
+        if previous_location is not None:
+            cv2.line(image, ((xs + xe) / 2, (ys + ye) / 2), previous_location, (255, 255, 0), thickness=3, lineType=8)
+            previous_location = ((xs + xe) / 2, (ys + ye) / 2)
+        else:
+            previous_location = ((xs + xe) / 2, (ys + ye) / 2)
+
+        print previous_location
+
+        cv2.imshow("Image", image)
+        cv2.waitKey(0)
