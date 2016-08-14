@@ -5,22 +5,19 @@ import cv2
 
 def track_features(video_input):
     feature_definitions = {
-        "car": [(50, 120, 90), (95, 255, 150), (), ()],
+        "car": [(40, 120, 100), (95, 255, 170), (), ()],
         "front_bumper": [(70, 20, 1), (255, 80, 110), 0.125, ()]
         # "back_bumper": [(), (), 0.0416, ()],
         # "right_side": [(), (), 0.03846, ()],
         # "left_side": [(), (), 0.03846, ()]
     }
 
-    CAR_FRAME_PADDING = 75
+    CAR_FRAME_PADDING = 100
 
     capture = cv2.VideoCapture(video_input)
 
     while True:
-        # succ, image = capture.read()
-
-        image = cv2.imread("car_green_1.jpg")
-        succ = True
+        succ, image = capture.read()
 
         if succ:
             car_mask = cv2.inRange(image, feature_definitions["car"][0], feature_definitions["car"][1])
@@ -91,6 +88,8 @@ def track_features(video_input):
 
             cv2.imshow("Frame", image)
             cv2.waitKey(0)
+
+            cv2.imshow("Car Frame", car_frame)
         else:
             break
 
@@ -145,4 +144,4 @@ def extract_roi(poly):
 #         cv2.imshow("Image", image)
 #         cv2.waitKey(0)
 
-track_features("car_driving_trimmed.mp4")
+track_features("green_car_driving_trimmed.mp4")
