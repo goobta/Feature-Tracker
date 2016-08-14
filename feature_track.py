@@ -5,33 +5,32 @@ import cv2
 
 def track_features(video_input):
     feature_definitions = {
-        "car": [(40, 120, 100), (95, 255, 170), (), ()],
-        "front_bumper": [(70, 20, 1), (255, 80, 110), 0.125, ()]
+        "car": [(40, 150, 100), (120, 255, 170), (), ()],
+        "front_bumper": [(70, 65, 55), (100, 80, 80), 0.001, ()],
         # "back_bumper": [(), (), 0.0416, ()],
-        # "right_side": [(), (), 0.03846, ()],
+        "right_side": [(75, 75, 85), (100, 110, 115), 0.003, ()]
         # "left_side": [(), (), 0.03846, ()]
     }
 
-    CAR_FRAME_PADDING = 100
+    CAR_FRAME_PADDING = 50
 
     capture = cv2.VideoCapture(video_input)
+    count = 0
 
     while True:
         succ, image = capture.read()
 
         if succ:
-            car_mask = cv2.inRange(image, feature_definitions["car"][0], feature_definitions["car"][1])
+            image_denoised = cv2.fastNlMeansDenoisingColored(image, None, 10, 10, 7, 21)
 
-            cv2.imshow("Mask", car_mask)
-            cv2.waitKey(0)
-
+            car_mask = cv2.inRange(image_denoised, feature_definitions["car"][0], feature_definitions["car"][1])
             car_contours, _ = cv2.findContours(car_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             car = max(car_contours, key=cv2.contourArea)
             car_perimeter = cv2.arcLength(car, True)
             approximate_region = cv2.approxPolyDP(car, 0.05 * car_perimeter, True)
 
             car_x_start, car_y_start, car_x_end, car_y_end = extract_roi(approximate_region)
-            max_y, max_x, channels = image.shape
+            max_y, max_x, channels = image_denoised.shape
 
             if car_x_start - CAR_FRAME_PADDING >= 0:
                 car_x_start -= CAR_FRAME_PADDING
@@ -53,45 +52,49 @@ def track_features(video_input):
             else:
                 car_y_end = max_y
 
-            car_frame = image[car_y_start:car_y_end, car_x_start:car_x_end]
+            car_frame = image_denoised[car_y_start:car_y_end, car_x_start:car_x_end]
             car_area = (car_x_end - car_x_start) * (car_y_end - car_y_start)
 
-            cv2.drawContours(image, [approximate_region], -1, (0, 255, 255), 4)
-            cv2.rectangle(image, (car_x_start, car_y_start), (car_x_end, car_y_end), (255, 0, 0), 2)
-            # for key, values in feature_definitions.iteritems():
-            #     if key == "car":
-            #         continue
-            #     else:
-            #         feature_definition = feature_definitions[key]
-            #
-            #         feature_mask = cv2.inRange(car_frame, feature_definition[0], feature_definition[1])
-            #         feature_contours, _ = cv2.findContours(feature_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            #         feature = max(feature_contours, key=cv2.contourArea)
-            #         feature_perimeter = cv2.arcLength(feature, True)
-            #         feature_approx = cv2.approxPolyDP(feature, 0.05 * feature_perimeter, True)
-            #
-            #         x_start, y_start, x_end, y_end = extract_roi(feature_approx)
-            #         feature_area = (x_end - x_start) * (y_end - y_start)
-            #
-            #         if feature_area >= (car_area * feature_definition[2]):
-            #             if feature_definition[3] == ():
-            #                 cv2.rectangle(image, (x_start + car_x_start, y_start + car_y_start), (x_end + car_x_end, y_end + car_y_end), (0, 255, 0), 2)
-            #
-            #                 feature_definition[3] = (car_x_start + (x_start + x_end) / 2, car_y_start + (y_start + y_end) / 2)
-            #             else:
-            #                 cv2.rectangle(image, (x_start + car_x_start, y_start + car_y_start), (x_end + car_x_end, y_end + car_y_end), (0, 255, 0), 2)
-            #                 cv2.line(image, (car_x_start + (x_start + x_end) / 2, car_y_start + (y_start + y_end) / 2), feature_definition[3], (255, 255, 0), 2)
-            #
-            #                 feature_definition[3] = (car_x_start + (x_start + x_end) / 2, car_y_start + (y_start + y_end) / 2)
-            #         else:
-            #             feature_definition[3] = ()
+            cv2.rectangle(image_denoised, (car_x_start, car_y_start), (car_x_end, car_y_end), (0, 255, 255), 1)
 
-            cv2.imshow("Frame", image)
-            cv2.waitKey(0)
+            for key, values in feature_definitions.iteritems():
+                if key == "car":
+                    continue
+                else:
+                    feature_definition = feature_definitions[key]
 
-            cv2.imshow("Car Frame", car_frame)
+                    feature_mask = cv2.inRange(car_frame, feature_definition[0], feature_definition[1])
+                    feature_contours, _ = cv2.findContours(feature_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+                    if len(feature_contours) > 0:
+                        feature = max(feature_contours, key=cv2.contourArea)
+                        feature_perimeter = cv2.arcLength(feature, True)
+                        feature_approx = cv2.approxPolyDP(feature, 0.05 * feature_perimeter, True)
+
+                        x_start, y_start, x_end, y_end = extract_roi(feature_approx)
+                        feature_area = (x_end - x_start) * (y_end - y_start)
+
+                        if feature_area >= (car_area * feature_definition[2]):
+                            if feature_definition[3] == ():
+                                cv2.rectangle(image_denoised, (x_start + car_x_start, y_start + car_y_start), (x_end + car_x_start, y_end + car_y_start), (0, 255, 0), 1)
+
+                                feature_definition[3] = (car_x_start + (x_start + x_end) / 2, car_y_start + (y_start + y_end) / 2)
+                            else:
+                                cv2.rectangle(image_denoised, (x_start + car_x_start, y_start + car_y_start), (x_end + car_x_start, y_end + car_y_start), (0, 255, 0), 1)
+                                cv2.line(image_denoised, (car_x_start + (x_start + x_end) / 2, car_y_start + (y_start + y_end) / 2), feature_definition[3], (255, 255, 0), 1)
+
+                                feature_definition[3] = (car_x_start + (x_start + x_end) / 2, car_y_start + (y_start + y_end) / 2)
+                        else:
+                            feature_definition[3] = ()
+                    else:
+                        feature_definition[3] = ()
+
+            cv2.imwrite("analyzed/image" + str(count) + ".jpg", image_denoised)
+            print "Image " + str(count) + " done"
         else:
             break
+
+        count += 1
 
 def extract_roi(poly):
     poly_numpy = np.array(poly).squeeze()
@@ -144,4 +147,4 @@ def extract_roi(poly):
 #         cv2.imshow("Image", image)
 #         cv2.waitKey(0)
 
-track_features("green_car_driving_trimmed.mp4")
+track_features("car_features_720_trimmed.mp4")
