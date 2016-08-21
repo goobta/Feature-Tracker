@@ -50,7 +50,7 @@ def create_figure(path):
         crash_status = text.text(-0.5, 0.5, "Crash Status: " + str(crash))
         distance_status = text.text(-0.5, -0.5, "Distance: " + str(distance))
 
-        figure.savefig("figures_sigma_" + str(canny_sigma) + "/FRAME_" + str(file_count))
+        figure.savefig("sigma_" + str(canny_sigma) + "_thresh_" + str(_threshold) + "/FRAME_" + str(file_count))
         crash_status.remove()
         distance_status.remove()
 
@@ -65,11 +65,11 @@ def find_bottom_edge(img_bw):
                 return point
 
 _threshold = 30
-canny_sigma = 2.5
+canny_sigma = 2.25
 threads = 8
 
 plot.ion()
-os.mkdir(os.getcwd() + "/figures_sigma_" + str(canny_sigma))
+os.mkdir(os.getcwd() + "/sigma_" + str(canny_sigma) + "_thresh_" + str(_threshold))
 files = glob.glob(os.getcwd() + "/resize150/*")
 
 pool = multiprocessing.Pool(threads)
