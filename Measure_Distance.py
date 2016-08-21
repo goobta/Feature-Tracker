@@ -36,7 +36,7 @@ def create_figure(path):
         img_bw = cv2.threshold(edges, 250, 255, cv2.THRESH_BINARY)[1]
 
         point = find_bottom_edge(img_bw)
-        distance = np.sqrt(np.power(point[0] - len(img_bw[0]) / 2, 2) + np.power(point[1] - len(img_bw), 2))
+        distance = len(img_bw) - point[1]
 
         cv2.line(image, point, (len(img_bw[0]) / 2, len(img_bw)), (0, 255, 0), 1)
 
