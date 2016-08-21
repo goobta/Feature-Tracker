@@ -68,8 +68,6 @@ plot.ion()
 os.mkdir(os.getcwd() + "/figures_sigma_" + str(canny_sigma))
 files = glob.glob(os.getcwd() + "/resize150/*")
 
-print files
-
 pool = multiprocessing.Pool(threads)
 pool.map(create_figure, files)
 
