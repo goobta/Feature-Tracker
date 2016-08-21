@@ -24,7 +24,7 @@ for path in files:
     distance = np.sqrt(np.power(point[0] - len(img_bw[0]) / 2, 2) + np.power(point[1] - len(img_bw), 2))
     print distance
 
-    cv2.line(img_bw, point, (len(img_bw[0])/ 2, len(img_bw)), 255, 1)
+    cv2.line(img_bw, point, (len(img_bw[0]) / 2, len(img_bw)), 255, 1)
 
     cv2.imshow("Image", image)
     cv2.imshow("Edges", img_bw)
