@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import os
 import glob
+import matplotlib.pyplot as plot
+
 from skimage.feature import canny
 from skimage import img_as_ubyte
 
@@ -13,19 +15,39 @@ def find_bottom_edge(img_bw):
                 return point
 
 files = glob.glob(os.getcwd() + "/bw150/*")
+_threshold = 30
+
+plot.ion()
+figure = plot.figure("Crash Labeller")
+image_raw = figure.add_subplot(221)
+image_edges = figure.add_subplot(222)
+text = figure.add_subplot(223)
+text_ax = text.axis([-1, 1, -1, 1])
 
 for path in files:
-    image = cv2.imread(path, cv2.CV_LOAD_IMAGE_GRAYSCALE)
-    edges = img_as_ubyte(canny(image, sigma=2.5))
+    crash = False
+
+    image = cv2.imread(path)
+
+    img_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    edges = img_as_ubyte(canny(img_gray, sigma=2.5))
     img_bw = cv2.threshold(edges, 250, 255, cv2.THRESH_BINARY)[1]
 
     point = find_bottom_edge(img_bw)
-
     distance = np.sqrt(np.power(point[0] - len(img_bw[0]) / 2, 2) + np.power(point[1] - len(img_bw), 2))
-    print distance
 
-    cv2.line(img_bw, point, (len(img_bw[0]) / 2, len(img_bw)), 255, 1)
+    cv2.line(image, point, (len(img_bw[0]) / 2, len(img_bw)), (0, 255, 0), 1)
 
-    cv2.imshow("Image", image)
-    cv2.imshow("Edges", img_bw)
-    cv2.waitKey(0)
+    if distance <= _threshold:
+        crash = True
+
+    image_raw.imshow(image)
+    image_raw.set_title("Image raw")
+    image_edges.imshow(edges)
+    image_edges.set_title("Edges")
+    crash_status = text.text(-0.5, 0.5, "Crash Status: " + str(crash))
+    distance_status = text.text(-0.5, -0.5, "Distance: " + str(distance))
+
+    plot.pause(1)
+    crash_status.remove()
+    distance_status.remove()
