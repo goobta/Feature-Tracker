@@ -33,7 +33,8 @@ for path in files:
     path_sections = path.split("/")
 
     for string in path_sections:
-        int_values.append(int(re.search(r'\d+', string).group()))
+        if re.search(r'\d+', string) is not None:
+            int_values.append(int(re.search(r'\d+', string).group()))
 
     file_count = int_values[-1]
     crash = False
