@@ -15,15 +15,17 @@ def track_features(video_input):
     CAR_FRAME_PADDING = 50
 
     capture = cv2.VideoCapture(video_input)
-    count = 0
 
     while True:
         succ, image = capture.read()
 
         if succ:
             image_denoised = cv2.fastNlMeansDenoisingColored(image, None, 10, 10, 7, 21)
+            cc_delta = brightness_delta(image_denoised)
 
-            car_mask = cv2.inRange(image_denoised, feature_definitions["car"][0], feature_definitions["car"][1])
+            print tuple(np.add(feature_definitions["car"][0], cc_delta))
+
+            car_mask = cv2.inRange(image_denoised, tuple(np.add(feature_definitions["car"][0], cc_delta)), tuple(np.add(feature_definitions["car"][1], cc_delta)))
             car_contours, _ = cv2.findContours(car_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             car = max(car_contours, key=cv2.contourArea)
             car_perimeter = cv2.arcLength(car, True)
@@ -63,7 +65,7 @@ def track_features(video_input):
                 else:
                     feature_definition = feature_definitions[key]
 
-                    feature_mask = cv2.inRange(car_frame, feature_definition[0], feature_definition[1])
+                    feature_mask = cv2.inRange(car_frame, tuple(np.add(feature_definition[0], cc_delta)), tuple(np.add(feature_definition[1], cc_delta)))
                     feature_contours, _ = cv2.findContours(feature_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
                     if len(feature_contours) > 0:
@@ -89,12 +91,14 @@ def track_features(video_input):
                     else:
                         feature_definition[3] = ()
 
-            cv2.imwrite("analyzed/image" + str(count) + ".jpg", image_denoised)
-            print "Image " + str(count) + " done"
+            cv2.imshow("Mask", car_mask)
+            cv2.imshow("denoised", image_denoised)
+            cv2.imshow("Frame", image)
+            cv2.imshow("Car Frame", car_frame)
+
+            cv2.waitKey(0)
         else:
             break
-
-        count += 1
 
 def extract_roi(poly):
     poly_numpy = np.array(poly).squeeze()
@@ -105,6 +109,21 @@ def extract_roi(poly):
     y_end = poly_numpy.max(axis=0)[1]
 
     return x_start, y_start, x_end, y_end
+
+def brightness_delta(input_image):
+    SAMPLE_FRAME_SIZE = 400
+    BASELINE_AVERAGE = 135.1991
+
+    image_bw = cv2.cvtColor(input_image, cv2.COLOR_BGR2GRAY)
+    height, length = image_bw.shape
+
+    sample_frame = image_bw[(height / 2) - SAMPLE_FRAME_SIZE / 2:(height / 2) + SAMPLE_FRAME_SIZE / 2, (length / 2) - SAMPLE_FRAME_SIZE / 2:(length/ 2) + SAMPLE_FRAME_SIZE / 2]
+    color_average = np.average(np.array(sample_frame).squeeze())
+
+    print color_average
+    print color_average - BASELINE_AVERAGE
+
+    return color_average - BASELINE_AVERAGE
 
 # capture = cv2.VideoCapture("feature_tracking_test.mp4")
 #
@@ -147,4 +166,4 @@ def extract_roi(poly):
 #         cv2.imshow("Image", image)
 #         cv2.waitKey(0)
 
-track_features("car_features_720_trimmed.mp4")
+track_features("4.mp4")
