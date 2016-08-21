@@ -30,12 +30,15 @@ os.mkdir(os.getcwd() + "/figures_sigma_" + str(canny_sigma))
 
 for path in files:
     int_values = []
+    path_sections = path.split("/")
 
-    for string in path.split("/"):
+    for string in path_sections:
         int_values.append(int(re.search(r'\d+', string).group()))
 
     file_count = int_values[-1]
     crash = False
+
+    print file_count
 
     image = cv2.imread(path)
 
