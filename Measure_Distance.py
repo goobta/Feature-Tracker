@@ -66,7 +66,7 @@ threads = 6
 
 plot.ion()
 os.mkdir(os.getcwd() + "/figures_sigma_" + str(canny_sigma))
-files = glob.glob("/home/agupta/Documents/Projects/Feature-Tracker/bw150/*")
+files = glob.glob(os.getcwd() + "/resize150/*")
 
 print files
 
