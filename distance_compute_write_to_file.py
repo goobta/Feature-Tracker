@@ -38,6 +38,7 @@ def worker(input_file_path, queue):
     output = str(file_count) + ":" + str(distance) + "\n"
     queue.put(output)
 
+    print str(file_count) + " in queue"
     return output
 
 
