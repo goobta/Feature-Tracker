@@ -61,7 +61,6 @@ def main():
     pool = multiprocessing.Pool(multiprocessing.cpu_count() + 2)
 
     files = glob.glob(os.getcwd() + "/resize150/*")
-
     watcher = pool.apply_async(listener, (queue,))
 
     jobs = []
