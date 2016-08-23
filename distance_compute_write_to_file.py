@@ -1,7 +1,6 @@
 from skimage.feature import canny
 from skimage import img_as_ubyte
 import multiprocessing
-import time
 import glob
 import cv2
 import os
@@ -72,13 +71,7 @@ def main():
         jobs.append(job)
 
     for job in jobs:
-        try:
-            job.get()
-        except TypeError:
-            print "sleeping"
-            time.sleep(1)
-
-            job.get()
+        job.get()
 
     queue.put("Kill")
     pool.close()
