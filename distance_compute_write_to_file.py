@@ -76,8 +76,6 @@ def main():
 
     jobs = []
     for i in xrange(len(files)):
-        print files[i]
-
         job = pool.apply_async(worker, (files[i], queue))
         jobs.append(job)
 
