@@ -1,13 +1,13 @@
 from skimage.feature import canny
 from skimage import img_as_ubyte
 import multiprocessing
+import time
 import glob
 import cv2
 import os
 import re
 
 canny_sigma = 2.25
-workers = 60
 
 
 def _find_bottom_edge(img_bw):
@@ -66,11 +66,19 @@ def main():
 
     jobs = []
     for i in xrange(len(files)):
+        print files[i]
+
         job = pool.apply_async(worker, (files[i], queue))
         jobs.append(job)
 
     for job in jobs:
-        job.get()
+        try:
+            job.get()
+        except TypeError:
+            print "sleeping"
+            time.sleep(1)
+
+            job.get()
 
     queue.put("Kill")
     pool.close()
