@@ -3,10 +3,12 @@ from skimage import img_as_ubyte
 import multiprocessing
 import glob
 import cv2
+import os
 import re
 
 canny_sigma = 2.25
-workers = 80
+workers = 60
+
 
 def _find_bottom_edge(img_bw):
     for i in reversed(xrange(len(img_bw))):
@@ -14,6 +16,7 @@ def _find_bottom_edge(img_bw):
             if(img_bw[i][j] > 0):
                 point = (j, i)
                 return point
+
 
 def worker(input_file_path, queue):
     int_values = []
@@ -39,6 +42,7 @@ def worker(input_file_path, queue):
 
     return output
 
+
 def listener(queue):
     fh = open("distances_sigma_" + str(canny_sigma) + ".txt")
 
@@ -53,7 +57,26 @@ def listener(queue):
         fh.flush()
     fh.close()
 
+
 def main():
     manager = multiprocessing.Manager()
     queue = manager.Queue()
+    pool = multiprocessing.Pool(multiprocessing.cpu_count() + 2)
 
+    watcher = pool.apply_async(listener, (queue,))
+
+    files = glob.glob(os.getcwd() + "/resize150/*")
+
+    jobs = []
+    for i in xrange(len(files)):
+        job = pool.apply_async(worker, (files[i], queue))
+        jobs.append(job)
+
+    for job in jobs():
+        job.get()
+
+    queue.put("Kill")
+    pool.close()
+
+if __name__ == "__main__":
+    main()
