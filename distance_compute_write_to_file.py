@@ -48,7 +48,6 @@ def worker(input_file_path, queue):
     output = str(file_count) + ":" + str(distance) + "\n"
     queue.put(output)
 
-    print str(file_count) + " in queue"
     return output
 
 
@@ -79,8 +78,9 @@ def main():
         job = pool.apply_async(worker, (files[i], queue))
         jobs.append(job)
 
-    for job in jobs:
-        job.get()
+    for i in xrange(len(jobs)):
+        jobs[i].get()
+        print str(i / float(len(jobs) - 1) * 100.0) + "% done"
 
     queue.put("Kill")
     pool.close()
