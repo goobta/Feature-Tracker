@@ -7,6 +7,7 @@ import os
 import re
 
 canny_sigma = 2.25
+canny_sigma_closeup = 1.5
 
 
 def _find_bottom_edge(img_bw):
@@ -32,7 +33,17 @@ def worker(input_file_path, queue):
     img_bw = cv2.threshold(edges, 250, 255, cv2.THRESH_BINARY)[1]
 
     point = _find_bottom_edge(img_bw)
-    distance = len(img_bw) - point[1]
+
+    try:
+        distance = len(img_bw) - point[1]
+    except TypeError:
+        try:
+            edges = img_as_ubyte(canny(image, sigma=canny_sigma_closeup))
+            img_bw = cv2.threshold(edges, 250, 255, cv2.THRESH_BINARY)[1]
+
+            distance = len(img_bw) - point[1]
+        except TypeError:
+            distance = 0
 
     output = str(file_count) + ":" + str(distance) + "\n"
     queue.put(output)
@@ -42,7 +53,7 @@ def worker(input_file_path, queue):
 
 
 def listener(queue):
-    fh = open("distances_sigma_" + str(canny_sigma) + ".txt", "a")
+    fh = open("distances_sigma_" + str(canny_sigma) + "_" + str(canny_sigma_closeup) + ".txt", "a")
 
     while True:
         queue_value = queue.get()

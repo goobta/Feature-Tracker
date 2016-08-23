@@ -35,7 +35,11 @@ for input_file_path in files:
     img_bw = cv2.threshold(edges, 250, 255, cv2.THRESH_BINARY)[1]
 
     point = _find_bottom_edge(img_bw)
-    distance = len(img_bw) - point[1]
+
+    try:
+        distance = len(img_bw) - point[1]
+    except TypeError:
+        distance = 200
 
     output = str(file_count) + ":" + str(distance) + "\n"
     fh.write(output)
