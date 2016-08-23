@@ -28,10 +28,8 @@ def worker(input_file_path, queue):
 
     file_count = int_values[-1]
 
-    image = cv2.imread(input_file_path)
-
-    img_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    edges = img_as_ubyte(canny(img_gray, sigma=canny_sigma))
+    image = cv2.imread(input_file_path, cv2.CV_LOAD_IMAGE_GRAYSCALE)
+    edges = img_as_ubyte(canny(image, sigma=canny_sigma))
     img_bw = cv2.threshold(edges, 250, 255, cv2.THRESH_BINARY)[1]
 
     point = _find_bottom_edge(img_bw)
@@ -44,7 +42,7 @@ def worker(input_file_path, queue):
 
 
 def listener(queue):
-    fh = open("distances_sigma_" + str(canny_sigma) + ".txt")
+    fh = open("distances_sigma_" + str(canny_sigma) + ".txt", "a")
 
     while True:
         queue_value = queue.get()
@@ -52,7 +50,6 @@ def listener(queue):
         if(queue_value == "kill"):
             print "Listener Killed"
             break
-
         fh.write(queue_value)
         fh.flush()
     fh.close()
@@ -63,16 +60,16 @@ def main():
     queue = manager.Queue()
     pool = multiprocessing.Pool(multiprocessing.cpu_count() + 2)
 
-    watcher = pool.apply_async(listener, (queue,))
-
     files = glob.glob(os.getcwd() + "/resize150/*")
+
+    watcher = pool.apply_async(listener, (queue,))
 
     jobs = []
     for i in xrange(len(files)):
         job = pool.apply_async(worker, (files[i], queue))
         jobs.append(job)
 
-    for job in jobs():
+    for job in jobs:
         job.get()
 
     queue.put("Kill")
